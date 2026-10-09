@@ -27,7 +27,7 @@ This prototype is ready to study and continue. Final report formatting, official
 
 ## Run in IntelliJ
 
-1. Extract the archive and open this project folder.
+1. Clone the linked repository or extract the archive, then open the project folder.
 2. Select JDK 17 as the project/module SDK. Included `.iml` and `.idea` files mark `src` as the source root; adjust the SDK name for your installed JDK.
 3. Set the working directory to the project root.
 4. Run `auk.sdt202.team4.app.RetentionRadarApp`; no arguments opens the menu.

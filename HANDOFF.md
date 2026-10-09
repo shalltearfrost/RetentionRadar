@@ -6,6 +6,13 @@ Updated on 9 October 2026. All project-facing text is in English.
 
 Repository: [shalltearfrost/RetentionRadar](https://github.com/shalltearfrost/RetentionRadar). It is currently private. Arrange access for the next contributor; confirm the instructor's repository visibility requirement before final submission.
 
+With repository access, clone it using:
+
+```text
+git clone https://github.com/shalltearfrost/RetentionRadar.git
+cd RetentionRadar
+```
+
 ## Start here
 
 1. Select JDK 17 in IntelliJ and set the working directory to the project root.

@@ -67,6 +67,10 @@ The real-data mode also ran with uk/UA JVM locale settings and retained decimal-
 
 The deliverable includes data attribution/provenance and IntelliJ descriptors. It excludes compiler files and generated build output. A newly packaged copy is checked by extraction/build in a directory with a space using Windows PowerShell 5.1. The initial portability check was an archive extraction test. The IntelliJ desktop UI was not opened during validation. The repository location is [shalltearfrost/RetentionRadar](https://github.com/shalltearfrost/RetentionRadar); it is currently private.
 
+## GitHub clone verification
+
+The initial project was uploaded to `main` in [commit e8f40fa](https://github.com/shalltearfrost/RetentionRadar/commit/e8f40fa0a8c7eb59035a0042ddc712f1ca67b2e2). A separate fresh clone from GitHub contained all 47 intended files. It compiled under Windows PowerShell 5.1 with JDK 17, passed all 58 checks, and ran the bundled real-data mode with the same 3,630 retained rows, optimizer counts and held-out metrics. Generated build output stayed ignored and the clone's working tree remained clean. Subsequent repository-link and verification updates affect documentation only.
+
 ## Remaining limits
 
 Academic features are end-of-first-semester observations and target eventual course outcomes. Financial-flag availability requires confirmation for operational use. Excluding Enrolled affects the population. Scores are not established intervention benefits or causal explanations.
