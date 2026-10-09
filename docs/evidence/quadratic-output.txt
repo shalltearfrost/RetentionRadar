@@ -1,0 +1,9 @@
+RetentionRadar - gradient descent and Nesterov educational prototype
+SDT 202 - Design and Analysis of Data Structures and Algorithms
+Team 4 | Uliana Matviienko; Andrii Moroz
+Topic: Gradient descent algorithm
+Real-data task: eventual dropout versus graduation using first-semester information.
+
+f(x,y)=0.5*(x^2+100*y^2); start=(1,1); minimum=(0,0); L=100; alpha=0.01.
+Classical GD: CONVERGED; updates=1375; objective=4.96312424842e-13; gradient norm=9.96305600548e-07
+Point / weights: [9.963056005479353E-7, 0.0]

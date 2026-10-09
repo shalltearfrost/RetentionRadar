@@ -1,0 +1,65 @@
+RetentionRadar - gradient descent and Nesterov educational prototype
+SDT 202 - Design and Analysis of Data Structures and Algorithms
+Team 4 | Uliana Matviienko; Andrii Moroz
+Topic: Gradient descent algorithm
+Real-data task: eventual dropout versus graduation using first-semester information.
+
+Synthetic data: 600 fictional records, generation seed 202604.
+Stratified split: training=480; test=120; split seed=202604
+Training positive-label rate=0.3000; held-out rate=0.3000
+Standardization fitted only on training rows; bias remains one.
+Slope lambda=0.010; conservative smoothness bound B=1.01000000; alpha=0.99009901
+
+Same objective/start/step: alpha=0.99009901; gradient tolerance=1.0e-06; update cap=50000
+Method         Stop              Updates       Objective  Gradient norm    f calls grad calls
+Classical GD   CONVERGED              64     0.587233792     9.5709e-07         65         65
+Nesterov       CONVERGED              53     0.587233792     8.1363e-07        105        105
+Stopping and history use ordinary iterates; Nesterov also evaluates look-ahead gradients.
+Update counts alone are not equal computational work; no universal measured speedup is claimed.
+Stored objective samples (dash means no sample at that update):
+  update      0: GD=0.693147181; Nesterov=0.693147181
+  update     25: GD=0.587238022; Nesterov=0.587234226
+  update     50: GD=0.587233793; Nesterov=0.587233794
+  update    100: GD=-; Nesterov=-
+  update    200: GD=-; Nesterov=-
+
+Held-out evaluation at fixed threshold 0.5; test rows did not participate in fitting.
+Classical GD: n=120; accuracy=0.71667; precision=1.00000; recall=0.05556; F1=0.10526; AUC=0.67758
+  TP=2 FP=0 TN=84 FN=34; unpenalized log-loss=0.57089; Brier=0.19360
+Nesterov: n=120; accuracy=0.71667; precision=1.00000; recall=0.05556; F1=0.10526; AUC=0.67758
+  TP=2 FP=0 TN=84 FN=34; unpenalized log-loss=0.57089; Brier=0.19360
+
+Coefficient projection: x=financialPressure; y=supportAccess
+Contours hold other weights at Nesterov's final values; paths project actual full-vector iterates.
+A projected path is not a sequence of two-dimensional slice-optimization updates.
+
+Objective contours and sampled actual optimizer iterates
+G=classical, N=Nesterov, X=both, O=origin, S=start; shades use log(1+objective).
+x: [-0.100, 0.407], left to right; y: [-0.279, 0.100], bottom to top
+@@@%%%%%#####*******+++++++===========--------------------------------
+@%%%%######******+++++++=========-----------------::::::::::::--------
+%%%######*****+++++++========-----------::::::::::::::::::::::::::::::
+%%#####*****++++++=======----------:::::::::::::::::::::::::::::::::::
+#####*****++++S+=======---------::::::::::::::...................:::::
+###*****++++++=======--------:::::::::::..............................
+##*****++++++======-------:::::::::::.................................
+#*****+++++======-------::::::::::....................................
+*****+++++======-------:::::::::................                ......
+****+++++======-------::::::::..............                        ..
+****+++++=====-------::::::::.............                            
+***+++++======-------::::::::...........                              
+***+++++======------::::::::............               X              
+***+++++======------::::::::............               N              
+***+++++======------:::::::::...........                              
+****+++++=====-------::::::::.............                            
+****+++++======-------::::::::..............                        ..
+*****+++++======-------:::::::::................                ......
+
+Held-out record ranking. Costs are illustrative error costs, not measured intervention effects.
+Threshold = unnecessaryOutreach / (unnecessaryOutreach + missedPositive).
+
+Model score ranking: 2 records meet threshold 0.5000; showing up to 25.
+Contributions change model log-odds; they are not causal explanations.
+Record          Score  Two largest signed feature contributions
+SYN-0090       54.02%  financialPressure=+0.501; studyEngagement=+0.390
+SYN-0050       50.97%  financialPressure=+0.405; studyEngagement=+0.390

@@ -1,0 +1,90 @@
+RetentionRadar - gradient descent and Nesterov educational prototype
+SDT 202 - Design and Analysis of Data Structures and Algorithms
+Team 4 | Uliana Matviienko; Andrii Moroz
+Topic: Gradient descent algorithm
+Real-data task: eventual dropout versus graduation using first-semester information.
+
+UCI source rows: 4424; omitted Enrolled: 794; retained: 3630
+Academic features are end-of-first-semester measurements; second-semester variables are excluded.
+Resolved Dropout/Graduate outcomes only: probabilities are conditional on this selected cohort.
+Stratified split: training=2904; test=726; split seed=202604
+Training positive-label rate=0.3915; held-out rate=0.3912
+Standardization fitted only on training rows; bias remains one.
+Slope lambda=0.010; conservative smoothness bound B=2.01000000; alpha=0.49751244
+
+Same objective/start/step: alpha=0.49751244; gradient tolerance=1.0e-06; update cap=50000
+Method         Stop              Updates       Objective  Gradient norm    f calls grad calls
+Classical GD   CONVERGED             865     0.358682941     9.9694e-07        866        866
+Nesterov       CONVERGED             375     0.358682941     4.4632e-07        749        749
+Stopping and history use ordinary iterates; Nesterov also evaluates look-ahead gradients.
+Update counts alone are not equal computational work; no universal measured speedup is claimed.
+Stored objective samples (dash means no sample at that update):
+  update      0: GD=0.693147181; Nesterov=0.693147181
+  update     25: GD=0.384176776; Nesterov=0.360562152
+  update     50: GD=0.370421238; Nesterov=0.358953501
+  update    100: GD=0.361779112; Nesterov=0.358697322
+  update    200: GD=0.358930672; Nesterov=0.358683100
+
+Held-out evaluation at fixed threshold 0.5; test rows did not participate in fitting.
+Classical GD: n=726; accuracy=0.88430; precision=0.93103; recall=0.76056; F1=0.83721; AUC=0.91960
+  TP=216 FP=16 TN=426 FN=68; unpenalized log-loss=0.31814; Brier=0.09443
+Nesterov: n=726; accuracy=0.88430; precision=0.93103; recall=0.76056; F1=0.83721; AUC=0.91960
+  TP=216 FP=16 TN=426 FN=68; unpenalized log-loss=0.31814; Brier=0.09443
+
+Coefficient projection: x=Curricular units 1st sem (approved); y=Curricular units 1st sem (grade)
+Contours hold other weights at Nesterov's final values; paths project actual full-vector iterates.
+A projected path is not a sequence of two-dimensional slice-optimization updates.
+
+Objective contours and sampled actual optimizer iterates
+G=classical, N=Nesterov, X=both, O=origin, S=start; shades use log(1+objective).
+x: [-2.27, 0.206], left to right; y: [-0.700, 0.100], bottom to top
+              ..............::::::::-------=====+++++*****#####%%%%@@@
+                .............::::::::-------=====+++++*****#####%%%%@@
+                 .............::::::::-------=====+++++*****###S#%%%%@
+                   ............::::::::------======+++++*****#####%%%%
+                    ............::::::::------======+++++*****#####%%%
+                     ............::::::::------======+++++*****#####%%
+                      ............::::::::------======+++++*****#####%
+                       ............::::::::------======+++++*****####%
+                        ............:::::::-------=====++++++*****####
+                         ............:::::::-------=====+++++*****####
+                          ...........::::::::------======+++++*****###
+      N NN                 ...........::::::::------======+++++*****##
+         XGXGG             ............:::::::-------======+++++*****#
+               G G          ...........::::::::-------=====++++++*****
+                  N G   G    ...........::::::::------======+++++*****
+                             .G.......G..:::::::-------======+++++****
+                              ...........::::::::------======++++++***
+                              ............:::::::-------======+++++***
+
+Held-out record ranking. Costs are illustrative error costs, not measured intervention effects.
+Threshold = unnecessaryOutreach / (unnecessaryOutreach + missedPositive).
+
+Model score ranking: 232 records meet threshold 0.5000; showing up to 25.
+Contributions change model log-odds; they are not causal explanations.
+Record          Score  Two largest signed feature contributions
+UCI-row1550    99.93%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row3534    99.86%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1211    99.84%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1829    99.83%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row0516    99.83%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row2286    99.82%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1572    99.82%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row0969    99.79%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row3315    99.75%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1805    99.75%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row2582    99.75%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row2022    99.74%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row3800    99.72%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row0512    99.72%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row3820    99.72%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row3683    99.70%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row2378    99.70%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row3549    99.69%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1387    99.68%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1102    99.68%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row0712    99.67%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row0802    99.67%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row0534    99.66%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1444    99.64%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132
+UCI-row1360    99.62%  Curricular units 1st sem (approved)=+2.907; Tuition fees up to date=+2.132

@@ -1,0 +1,73 @@
+Compiled 24 Java source files for Java 17.
+RetentionRadar - gradient descent and Nesterov educational prototype
+SDT 202 - Design and Analysis of Data Structures and Algorithms
+Team 4 | Uliana Matviienko; Andrii Moroz
+Topic: Gradient descent algorithm
+Real-data task: eventual dropout versus graduation using first-semester information.
+Classical gradient descent self-check
+PASS: Known quadratic minimum
+PASS: Optimal start needs zero updates
+PASS: Iteration limit counts actual updates
+PASS: Convergence on the final allowed update
+PASS: All coordinates use the same gradient
+PASS: Nonfinite objective and gradient stop safely
+PASS: Overflowing update stops safely
+PASS: Finite loss magnitude guard
+PASS: History stride includes initial and final states
+PASS: History can be disabled
+PASS: Inputs and results do not share mutable arrays
+PASS: Invalid configuration and dimensions are rejected
+PASS: Objective exceptions remain visible
+PASS: Vector norm avoids premature square overflow
+All 14 checks passed.
+PASS: seeded synthetic cohort
+PASS: logistic gradient coordinate 0
+PASS: logistic gradient coordinate 1
+PASS: logistic gradient coordinate 2
+PASS: logistic gradient coordinate 3
+PASS: stable loss at extreme logits
+PASS: stable sigmoid at extreme logits
+PASS: synthetic logistic training converges
+PASS: unregularized bias base-rate identity
+PASS: objective owns a copy of its input data
+PASS: cohort accessors protect stored data
+Model checks passed.
+Nesterov accelerated gradient descent self-check
+PASS: Nesterov reaches a known quadratic minimum
+PASS: Nesterov preserves an optimal start
+PASS: Nesterov reports actual updates and the final stop
+PASS: Nesterov uses the gradient at lookahead
+PASS: Momentum uses floating-point division
+PASS: Acceleration differs from classical GD
+PASS: Quadratic iterates satisfy the convex convergence bound
+PASS: Finite objective increases remain allowed
+PASS: Nesterov handles nonfinite ordinary and lookahead states
+PASS: Nesterov handles overflowing updates and lookahead
+PASS: Nesterov uses the finite magnitude guard
+PASS: Nesterov records ordinary iterates with the requested stride
+PASS: Nesterov preserves input and result copies
+PASS: Nesterov rejects invalid inputs
+PASS: Nesterov propagates objective failures
+All 15 acceleration checks passed.
+PASS: CSV BOM, quoted fields, schema and outcome filtering
+PASS: CSV rejects invalid schema, malformed fields and bad data
+PASS: Stratified split is deterministic, disjoint and complete
+PASS: Standardization fits training rows and protects the bias and copies
+All 4 data checks passed.
+Evaluation self-check
+PASS: Threshold confusion matrix and summary metrics
+PASS: Unpenalized log-loss and Brier score
+PASS: Perfect AUC ranking
+PASS: Reversed AUC ranking
+PASS: AUC gives equal scores half credit
+PASS: Mixed AUC ties match pairwise counting
+PASS: Prediction includes the threshold boundary
+PASS: No predicted positives has undefined precision
+PASS: Single-class evaluation has undefined AUC
+PASS: Extreme logits retain finite unpenalized loss and ordering
+PASS: Evaluation leaves input arrays unchanged
+PASS: Invalid evaluation inputs are rejected
+All 12 evaluation checks passed.
+PASS: cost threshold identity and direction
+PASS: cost threshold handles large finite values
+All project checks passed.

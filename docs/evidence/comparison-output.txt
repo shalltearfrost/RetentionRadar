@@ -1,0 +1,42 @@
+RetentionRadar - gradient descent and Nesterov educational prototype
+SDT 202 - Design and Analysis of Data Structures and Algorithms
+Team 4 | Uliana Matviienko; Andrii Moroz
+Topic: Gradient descent algorithm
+Real-data task: eventual dropout versus graduation using first-semester information.
+
+f(x,y)=0.5*(x^2+1000*y^2); start=(1,1); minimum=(0,0); L=1000; mu=1.
+
+Same objective/start/step: alpha=0.0010000000; gradient tolerance=1.0e-06; update cap=100000
+Method         Stop              Updates       Objective  Gradient norm    f calls grad calls
+Classical GD   CONVERGED           13809  4.99601610e-13     9.9960e-07      13810      13810
+Nesterov       CONVERGED            3302  3.06677283e-13     7.8317e-07       6603       6603
+Stopping and history use ordinary iterates; Nesterov also evaluates look-ahead gradients.
+Update counts alone are not equal computational work; no universal measured speedup is claimed.
+Stored objective samples (dash means no sample at that update):
+  update      0: GD=500.500000; Nesterov=500.500000
+  update     25: GD=0.475602814; Nesterov=0.413342863
+  update     50: GD=0.452396074; Nesterov=0.241856534
+  update    100: GD=0.409324415; Nesterov=0.0130431555
+  update    200: GD=0.335092953; Nesterov=0.00158441139
+
+Objective contours and sampled actual optimizer iterates
+G=classical, N=Nesterov, X=both, O=origin, S=start; shades use log(1+objective).
+x: [-0.225, 1.11], left to right; y: [-0.100, 1.10], bottom to top
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@S@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+######################################################################
+######################################################################
+**********************************************************************
+**********************************************************************
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+======================================================================
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::---------
+                                         .............................
+      N  NNNOXXGGGGGXGGGGGGGGGGGGXGGGGGGGGGGGGGGXGGGGGGGGGGNGGG    ...
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

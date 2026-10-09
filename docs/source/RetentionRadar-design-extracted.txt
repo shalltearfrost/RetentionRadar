@@ -1,0 +1,985 @@
+
+
+RetentionRadar Project Design
+
+  
+
+    
+- 00Frozen decisions
+
+    
+- 01The problem
+
+    
+- 02Classical algorithm
+
+    
+- 03Improved algorithm
+
+    
+- 04Real-world application
+
+    
+- 05Java architecture
+
+    
+- 06Proving it works
+
+    
+- 07Review findings
+
+    
+- 08Report map
+
+    
+- 09Schedule
+
+    
+- 10Who does what
+
+    
+- 11Risks
+
+    
+- 12References
+
+  
+
+  
+SDT 202 · Final Team Project · Team 4
+
+  
+RetentionRadar∇J(w)
+
+  
+Project design for the gradient descent topic: the classical algorithm, Nesterov's accelerated variant as the improvement, and a Java early-warning tool that ranks first-year students by dropout risk so advisors know whom to call first.
+
+  
+
+    Course SDT 202, Dr. Kolesnikov
+    Initial talk week 8 · ~30%
+    Final talk week 15
+    Stack plain Java 17, IntelliJ, no libraries
+
+  
+00Three decisions, frozen
+
+  
+
+The design went through three competing application proposals and three independent reviews. These three choices hold everything else together; change one and most of the plan below has to be redone.
+
+  
+
+    
+
+Application
+
+RetentionRadar
+
+Logistic regression trained by gradient descent to flag students at risk of withdrawing. Chosen over a bakery planner and a facility-siting tool.
+
+    
+
+Improved algorithm
+
+Nesterov accelerated gradient
+
+The only candidate with a proven rate gain, O(1/k²) vs O(1/k), on exactly the class of function this app produces.
+
+    
+
+Names
+
+SDT202-Team4-GradientDescent
+
+Driver: RetentionRadarApp.java. Report: SDT202-project-team4.docx.
+
+  
+
+  
+Why this app won: the judge scored it 42 vs 40 (bakery) and 39 (siting). Logistic regression is smooth and convex, which is what Nesterov's guarantee needs, and it has no closed-form solution, so "why not just solve it directly?" has an honest answer.
+
+  
+01The problem gradient descent solves
+
+  
+
+    
+Given a differentiable function f: ℝⁿ → ℝ, find the point x* that makes f as small as possible. In plain words: some quantity we care about, such as a model's prediction error, depends on a handful of numbers we control, and we want the setting of those numbers that makes it smallest.
+
+    
+Calculus says to set every partial derivative to zero and solve ∇f(x) = 0. For most objectives that system is nonlinear with no closed-form solution. Even when one exists (ordinary least squares), it costs Θ(n³) to build and invert an n×n matrix. Gradient descent trades one expensive exact solve for many cheap approximate steps that only need the gradient at the current point.
+
+    
+Intuition for the slide: you stand on a hillside in fog and can only feel the slope under your feet. Step downhill, repeat. The negative gradient is provably the steepest-descent direction: the directional derivative along a unit vector u is ‖∇f‖·cos θ, most negative when u points opposite the gradient.
+
+  
+
+  
+update rule      x(k+1) = x(k) − α · ∇f(x(k))
+stop when        ‖∇f(x(k))‖ ≤ ε      or      k = maxIter
+stable if        0 < α < 2/L        L = Lipschitz constant of ∇f
+
+  
+
+First-order condition ∇f(x*) = 0 is necessary but not sufficient (saddles and maxima satisfy it too). For convex f it is also sufficient, and any local minimum is global. That is one more reason the chosen application is convex.
+
+  
+02Classical algorithm and pseudocode
+
+  
+
+    
+Batch gradient descent with a fixed step size. "Batch" means every gradient evaluation sweeps all m data points before any move is made. This pseudocode is canonical: use it in the report, on the slides, and as the left column of the side-by-side with the improved version.
+
+  
+
+  
+    GRADIENT-DESCENT (classical)canonical version
+
+GRADIENT-DESCENT(gradF, x0, α, ε, maxIter)
+Input:  gradF – returns ∇f at a point; x0 – start, n reals;
+        α – step size (0 < α < 2/L); ε – tolerance; maxIter – cap
+Output: x that approximately minimizes f
+ 1n = length[x0]
+ 2let x[0..n−1] be a new array
+ 3for j = 0 to n − 1
+ 4    x[j] = x0[j]                     // work on a copy
+ 5for k = 1 to maxIter
+ 6    g = gradF(x)                     // g[j] = ∂f/∂x_j at x
+ 7    sumSq = 0
+ 8    for j = 0 to n − 1
+ 9        sumSq = sumSq + g[j] · g[j]
+10    if sqrt(sumSq) ≤ ε
+11        return x                     // converged
+12    for j = 0 to n − 1
+13        x[j] = x[j] − α · g[j]       // the update rule
+14return x                             // budget exhausted
+
+  
+
+    
+Points to be ready to defend: the stopping test comes before the update, so an already-optimal start is returned unchanged. All coordinates update from the same vector g; recomputing the gradient between coordinates would be coordinate descent, which is a common bug. The Java version must report which exit fired (converged or ran out of iterations).
+
+  
+
+  
+Convergence: what the theory actually promises
+
+  
+
+    
+ | Assumption on f | Step | Guarantee | Iterations to accuracy ε
+
+    
+
+ | Convex, L-smooth | α ≤ 1/L | f(x_k) − f* ≤ ‖x₀−x*‖² / (2αk) | O(1/ε)
+
+      
+ | μ-strongly convex, L-smooth | α = 1/L | f(x_k) − f* ≤ (1 − μ/L)^k · (f(x₀) − f*) | O(κ log 1/ε), κ = L/μ
+
+      
+ | Non-convex, L-smooth | α ≤ 1/L | min ‖∇f‖² shrinks like O(1/k); reaches a stationary point, not necessarily a minimum | O(1/ε²)
+
+    
+
+  
+
+    
+The α < 2/L bound comes from the descent lemma: f(x_{k+1}) ≤ f(x_k) − α(1 − αL/2)‖∇f(x_k)‖², and the bracket is positive exactly when α < 2/L. L is the largest absolute eigenvalue of the Hessian (its spectral norm), not just the largest eigenvalue; they coincide only for convex f. The condition number κ exists only for strongly convex f. For merely convex f, μ = 0.
+
+  
+
+  
+Complexity (this is a DSA course, so be exact)
+
+  
+
+    
+ | Quantity | Cost | Why
+
+    
+
+ | One iteration, data-fitting objective | Θ(m·n) | m residuals, each a Θ(n) dot product, accumulated into an n-vector
+
+      
+ | Whole run | Θ(k·m·n) | k set by accuracy and conditioning, see table above
+
+      
+ | Space, history off | Θ(n) | only x and g; independent of k
+
+      
+ | Space, history on | Θ(k·n) or Θ(k/s·n) | record every s-th iterate for long runs (see review finding J5)
+
+      
+ | Exact alternative (normal equations) | Θ(m·n² + n³) | only exists for least squares; not for logistic regression
+
+      
+ | Central-difference gradient (checker only) | 2n evaluations of f | why production code uses the hand-derived gradient
+
+    
+
+  
+Worked example for the slide
+
+  
+f(x) = x²,  f′(x) = 2x,  L = 2,  x₀ = 5
+α = 0.1   5 → 4 → 3.2 → 2.56 → 2.048      contracts ×0.8, converges
+α = 0.9   5 → −4 → 3.2 → −2.56            oscillates, still converges (α < 2/L = 1)
+α = 1.1   5 → −6 → 7.2 → −8.64            grows ×1.2, diverges
+
+  
+If asked when α = 1.1 overflows: f overflows to Infinity after about 1,900 iterations, x itself after about 3,900. Better still, print the actual iteration in the demo rather than quoting a number.
+
+  
+03The improved algorithm: Nesterov acceleration
+
+  
+
+    
+On a long, narrow valley gradient descent zig-zags: the gradient points across the valley rather than along it, so each step undoes most of the previous one. Momentum adds a fraction of the previous step to the current one, so the along-valley components add up while the side-to-side components cancel. Nesterov's refinement is to take the momentum jump first, then measure the gradient where you land. You correct based on where you are going, not where you were, so you brake before you overshoot instead of after.
+
+  
+
+  
+
+    
+classical GD, zig-zags across the valleyNesterov, follows the valley floor
+
+    Figure 3.1 idea. In the program this becomes an ASCII contour plot over two chosen weights, drawn from real iterates.
+
+  
+
+    
+      Classical (core loop)from Part 2
+
+ 1x = x0
+ 2for k = 1 to maxIter
+ 3    g = gradF(x)
+ 4    if ‖g‖ ≤ ε
+ 5        return x
+ 6    x = x − α·g
+ 7
+ 8
+ 9
+10return x
+
+    
+
+      NESTEROV-GRADIENT-DESCENT4 lines differ
+
+ 1x = x0;  xPrev = x0;  y = x0
+ 2for k = 1 to maxIter
+ 3    g = gradF(y)            // at look-ahead
+ 4    if ‖g‖ ≤ ε
+ 5        return y
+ 6    x = y − α·g              // α ≤ 1/L
+ 7    β = (k − 1) / (k + 2)
+ 8    y = x + β·(x − xPrev)
+ 9    xPrev = x
+10return x
+
+    
+
+  
+Java trap, found in review. Written literally as (k - 1) / (k + 2) with an int k, this is integer division and equals 0 for every k. β = 0 silently turns Nesterov back into plain gradient descent, and every test still passes. Write (k - 1.0) / (k + 2.0) and add a self-check that β > 0.9 by k = 30.
+
+  
+What you may honestly claim
+
+  
+
+    
+ | Setting | Classical GD | Nesterov | Condition
+
+    
+
+ | Convex, L-smooth | O(1/k) | O(1/k²) | β_k = (k−1)/(k+2), α ≤ 1/L. This is the headline claim.
+
+      
+ | μ-strongly convex | O(κ log 1/ε) | O(√κ log 1/ε) | Only with the constant β = (√κ−1)/(√κ+1), which needs μ. Optional second slide.
+
+    
+
+  
+
+    
+Do not say "the speedup grows like √κ" for the (k−1)/(k+2) schedule; the measured numbers below do not follow a clean √κ law (101 → 121 between κ = 100 and 1000). Do not say NAG is "unimprovable" without the hypothesis: the Nemirovski–Yudin lower bound holds only for k ≤ (n−1)/2, and on a 2-D quadratic conjugate gradient finishes in exactly 2 steps.
+
+  
+
+  
+Measured during design (re-measure and report your own)
+
+  
+f = ½(x² + κy²) from (1, 1), iterations until f − f* ≤ 10⁻⁸ · (f₀ − f*). Classical GD is given its best fixed step 2/(L+μ), not a handicapped one. Bar length on a log scale.
+
+  
+
+    
+ | κ | GD | NAG | Speedup | Iterations (log scale)
+
+    
+
+ | 10 | 46 | 41 | 1.1× | 
+
+      
+ | 100 | 461 | 101 | 4.6× | 
+
+      
+ | 1,000 | 4,606 | 121 | 38× | 
+
+      
+ | 10,000 | 46,052 | 378 | 122× | 
+
+    
+
+  
+On the RetentionRadar data with raw, unstandardized features the design run measured L ≈ 4,368 and κ ≈ 4.4·10⁵: Nesterov reached a 10⁻⁶ relative gap in 9,180 iterations, while classical GD at the same step had not reached it after 3,000,000.
+
+  
+Honest caveats (the professor will ask)
+
+  
+
+    
+- Not monotone. The loss goes up on some iterations by design. A "stop if loss increased" divergence guard would kill the improved algorithm.
+
+    
+- Smaller safe step. The proof needs α ≤ 1/L; in practice NAG stays stable up to about 4/(3L), versus 2/L for GD.
+
+    
+- Standardizing features beat both. Standardized, κ ≈ 30 and both finish in about 20 iterations. Present this as the closing honesty slide: preprocessing is not always possible (streaming data, online updates), while acceleration needs no preprocessing.
+
+    
+- Heavy-ball momentum is not "strictly worse". On quadratics with tuned parameters it is often faster (71 vs 101 at κ = 100). What it lacks is a guarantee for general convex functions: Lessard, Recht & Packard (2016) give a strongly convex function on which it fails to converge.
+
+  
+
+  
+Alternatives considered, for a comparison slide
+
+  
+
+    
+ | Method | What it improves | Why it is not the headline
+
+    
+
+ | Heavy-ball momentum (Polyak 1964) | Zig-zag on quadratics | No convex-case guarantee
+
+      
+ | Backtracking line search (Armijo 1966) | Removes α tuning, cannot diverge | Still O(κ) iterations; robustness, not speed
+
+      
+ | Adam, RMSProp, AdaGrad | Noisy, sparse, stochastic settings | No rate gain for deterministic convex problems; measured slower here
+
+      
+ | Mini-batch SGD | Cost per iteration on huge data | Not fewer iterations; noise floor
+
+      
+ | Newton / BFGS | Quadratic / superlinear convergence | Θ(n³) per step, Hessian, beyond 40 lines
+
+    
+
+  
+04Real-world application: RetentionRadar
+
+  
+
+    
+The situation. Every university loses first-year students, and most of them could have been reached earlier: an advisor call in week six costs ten minutes, a withdrawal costs a year of tuition and a student's plan. Advisors cannot call everyone. RetentionRadar reads what the university already knows by mid first semester (grades so far, credit units attempted and passed, tuition status, scholarship, age at enrolment), trains a logistic regression model with gradient descent, and prints a ranked call list with the reasons behind each name.
+
+    
+Why gradient descent is the right tool, not a detour. Setting the logistic loss gradient to zero gives a transcendental system with no closed-form solution, so an iterative method is required. The loss is convex, so there is one global minimum and gradient descent finds it, and it is smooth, so Nesterov's guarantee applies.
+
+  
+
+  
+Objective
+
+  
+z_i = w · x_i                  (x_i0 = 1 is the bias)
+p_i = σ(z_i) = 1 / (1 + e^(−z_i))
+
+J(w) = −(1/n) Σ_i [ y_i ln p_i + (1 − y_i) ln(1 − p_i) ]  +  (λ/2) Σ_{j≥1} w_j²
+
+∂J/∂w_j = (1/n) Σ_i (p_i − y_i) · x_ij  +  λ·w_j      (no λ term for j = 0)
+
+  
+
+    
+The derivation fits on one board and has a punch line worth pointing at: σ′(z) = p(1−p); ∂L/∂p = (p−y)/[p(1−p)]; multiply them and the p(1−p) factors cancel, leaving just the prediction error (p − y). That cancellation is also why cross-entropy, not squared error, is the right loss: with squared error the p(1−p) factor survives and goes to zero when the model is confidently wrong, which stalls learning.
+
+  
+
+  
+The call threshold is derived, not guessed
+
+  
+c_u = cost of missing a student who withdraws     (e.g. a year of tuition)
+c_o = cost of an unnecessary call                   (e.g. ten advisor minutes)
+
+call student i  ⇔  c_u · p_i > c_o · (1 − p_i)  ⇔  p_i > t* = c_o / (c_o + c_u)
+
+  
+One mechanism, not two. An earlier draft both weighted the loss by the costs and used the cost threshold, which counts the asymmetry twice. The model is trained on plain (unweighted) cross-entropy, and the costs enter only through t*. That also keeps the self-check identity in Part 06 exact.
+
+  
+Data
+
+  
+
+    
+- Primary: UCI Machine Learning Repository #697, "Predict Students' Dropout and Academic Success" (Realinho et al., 2021), 4,424 records, licensed CC BY 4.0, so the CSV can be committed with attribution. Verify the licence on the dataset page before committing.
+
+    
+- Preparation: the file is semicolon-delimited with three classes (Dropout / Enrolled / Graduate). Drop "Enrolled" (outcome unknown), map Dropout → 1, Graduate → 0, and keep only features observable by mid first semester. Count the resulting rows in code and quote the printed number, not a remembered one.
+
+    
+- Fallback: SyntheticCohort generates students from known "planted" weights with a fixed seed. It needs no file, so the demo and self-check work even if the CSV path breaks.
+
+    
+- Ethics note for the report: the output triggers a supportive advisor call, never a sanction. Exclude nationality, gender and similar attributes as features, and say so.
+
+  
+
+  
+90-second demo
+
+  
+
+    
+- Load the cohort; the program prints row count, base rate, and the computed L, μ, κ and safe step 1/L.
+
+    
+- Train with classical GD, then Nesterov. Show the iteration counts side by side and the ASCII contour with both paths.
+
+    
+- Print the top-25 call list with each student's risk and the two features that contributed most (w_j · x_ij).
+
+    
+- Raise c_u on stage. The model does not retrain; t* drops, and the list lengthens. "Nobody programmed that rule; it came out of two lines of algebra."
+
+  
+
+  
+05Java architecture
+
+  
+
+Plain Java project in IntelliJ (no Maven or Gradle), language level 17, one repository. The optimizer never mentions students: it only sees "give me f(x) and ∇f(x)", so the same function can be tested on a bowl with a known minimum and then applied to the real data. About 16 classes, cut down from 33 in the first draft.
+
+  
+SDT202-Team4-GradientDescent/
+├── README.md                    run instructions, data attribution, scope tiers
+├── SDT202-Team4-GradientDescent.iml   committed
+├── .idea/  modules.xml, misc.xml      committed; workspace.xml ignored
+├── data/students-early.csv      + DATA-SOURCE.md
+├── docs/screenshots/            one PNG per titled screenshot
+└── src/auk/sdt202/team4/
+    ├── app/
+    │   ├── RetentionRadarApp.java     driver, information header, menu
+    │   ├── Watchlist.java               ranked call list + reasons
+    │   └── ComparisonReport.java        GD vs NAG table, ASCII contour
+    ├── optimization/
+    │   ├── ObjectiveFunction.java       value(w), gradient(w), dimension()
+    │   ├── OptimizerConfig.java         α, ε, maxIter, historyStride
+    │   ├── OptimizationResult.java      x, stop reason, iterations, trace
+    │   ├── StopReason.java              CONVERGED, MAX_ITERATIONS, DIVERGED
+    │   ├── GradientDescent.java         the graded function
+    │   ├── NesterovGradientDescent.java the improved function
+    │   ├── PowerIteration.java          estimates L
+    │   └── VectorMath.java              dot, norm, axpy
+    ├── model/
+    │   └── LogisticObjective.java       stable sigmoid, loss, gradient
+    ├── data/
+    │   ├── StudentCsvLoader.java        Locale.ROOT parsing
+    │   ├── SyntheticCohort.java         fixed-seed fallback data
+    │   └── Standardizer.java            for the honesty slide
+    └── verify/
+        └── SelfCheck.java               runs with --verify, no files
+
+  
+The function the program must call
+
+public static OptimizationResult minimize(ObjectiveFunction f, double[] x0, OptimizerConfig cfg)
+    // GradientDescent.minimize  and  NesterovGradientDescent.minimize  share this signature
+
+public interface ObjectiveFunction {
+    int dimension();
+    double value(double[] w);
+    double[] gradient(double[] w);
+}
+
+  
+
+    
+Both optimizers are pure static functions: everything arrives through parameters, nothing is printed inside, no files are touched. The driver, the comparison mode and the self-check all call the same code path, which is what the rubric's "program must call the function" line asks for.
+
+  
+
+  
+Numerical rules (non-negotiable)
+
+  
+
+    
+ | Rule | Why
+
+    
+
+ | σ(z) = z ≥ 0 ? 1/(1+e^−z) : e^z/(1+e^z) | Naive 1/(1+e^−z) returns exactly 0 or 1 at |z| ≈ 800, then ln(0) = −∞ and NaN spreads.
+
+      
+ | loss_i = max(z,0) − y·z + log1p(e^−|z|) | Same value as the textbook form, never overflows, never takes ln(0).
+
+      
+ | (k − 1.0) / (k + 2.0), 1.0 / n | Integer division silently gives 0.
+
+      
+ | DIVERGED = !isFinite(f) || f > 10⁶·(|f(x₀)|+1) | Checks magnitude, not "loss went up", because Nesterov is non-monotone by design.
+
+      
+ | Double.parseDouble with Locale.ROOT formatting | Ukrainian locale uses a decimal comma; a crash on the grader's laptop is the worst outcome.
+
+      
+ | Load the CSV relative to the project root | No absolute paths; the repo must run from a fresh clone.
+
+    
+
+  
+Driver menu
+
+  
+RetentionRadar — early-warning for first-year withdrawal
+  1  Load cohort (CSV or synthetic)
+  2  Train with classical gradient descent
+  3  Train with Nesterov accelerated gradient
+  4  Compare both (iterations, loss curve, contour)
+  5  Show call list (top 25) with reasons
+  6  Change costs c_u, c_o and recompute threshold
+  7  Run self-check
+  0  Exit
+
+  
+Information header (top of RetentionRadarApp.java)
+
+/*
+ * Course:      SDT 202 Design and Analysis of Data Structures and Algorithms
+ * Instructor:  Dr. Kolesnikov
+ * Project:     Final Team Project, Team 4: Gradient Descent
+ * Program:     RetentionRadar, early-warning tool for first-year withdrawal
+ * Team:        [full names of all members]
+ * Repository:  [public GitHub URL]
+ * Date:        [submission date]
+ * Description: Trains a logistic regression model with classical and
+ *              Nesterov-accelerated gradient descent and ranks students
+ *              by predicted withdrawal risk for advisor outreach.
+ */
+
+  
+
+    
+Comment rule from the brief: no AI-generated comments and no comment on every line. Write a few comments per method in your own words about things the code cannot say: which symbol maps to which variable, why the stopping test precedes the update, why the sigmoid is split at z = 0. Never narrate what a line obviously does.
+
+  
+
+  
+06Proving it works, without JUnit
+
+  
+
+    
+ | Check | Passes when | What it catches
+
+    
+
+ | Gradient check | analytic vs central difference, relative error < 10⁻⁶ | any sign or factor error in ∂J/∂w
+
+      
+ | Known minimum | f = ½(x² + 100y²) converges to (0, 0) | broken update loop
+
+      
+ | Base-rate identity | mean predicted risk = observed withdrawal rate (unregularized bias, unweighted loss) | gradient bugs; comes free from ∂J/∂w₀ = 0
+
+      
+ | Planted weights | fit on SyntheticCohort recovers the planted w within tolerance | data pipeline and model errors
+
+      
+ | Nesterov bound | f(x_k) − f* ≤ 2L‖x₀−x*‖²/(k+1)² at every k | the integer-division β bug and similar
+
+      
+ | Divergence | α = 10 on the bowl returns DIVERGED, not NaN | missing guard
+
+    
+
+  
+Use h = ∛ε_machine · max(1, |x_j|) ≈ 6·10⁻⁶ for central differences; √ε ≈ 1.5·10⁻⁸ is the rule for one-sided differences. Keep Rosenbrock as informational output only: it is non-convex and not globally L-smooth, so do not assert pass/fail on it.
+
+  
+07What the review caught
+
+  
+
+Three independent reviewers (a mathematician, a rubric auditor and a Java engineer) went through the first draft looking for errors. Everything below is already corrected in this document; the list exists so the team knows where the traps are.
+
+  
+
+    
+ | ID | Severity | Problem | Resolution
+
+    
+
+ | J1 | critical | (k-1)/(k+2) is integer division in Java, so β = 0 always and NAG becomes plain GD | Use doubles; self-check β increases
+
+      
+ | M1 | critical | Claimed √κ speedup for a schedule that only carries an O(1/k²) theorem | Headline claim is O(1/k²); √κ only for the constant-β variant
+
+      
+ | M2 | critical | Cost-weighted loss plus cost threshold counted the asymmetry twice | Unweighted loss; costs only in t*
+
+      
+ | M3 | critical | Weighted loss broke the "mean risk = base rate" self-check | Fixed by M2
+
+      
+ | R1 | critical | Draft sections described three different apps and three improved algorithms | Frozen decisions, Part 00
+
+      
+ | J2 | major | No stable sigmoid; raw features give |z| in the hundreds and NaN losses | Stable σ and log1p loss, Part 05
+
+      
+ | J3 | major | "Loss increased" divergence guard would abort Nesterov | Magnitude-based guard
+
+      
+ | M4 | major | Least-squares gradient written three ways, differing by a factor of 4 | One convention: f = (1/2m)‖Xw−y‖², ∇f = (1/m)Xᵀ(Xw−y)
+
+      
+ | M5 | major | L defined as largest eigenvalue; κ used for merely convex f | L = spectral norm; κ only with strong convexity
+
+      
+ | J4 | major | Two pseudocode versions with different stopping tests | One canonical version, Part 02
+
+      
+ | J5 | major | Recording every iterate of a 3-million-step run needs about 300 MB | historyStride; state space as Θ(k/s·n)
+
+      
+ | J6 | major | .gitignore excluded the .iml, so a fresh clone opens with no source root | Commit .iml, modules.xml, misc.xml
+
+      
+ | J7 | major | Scope about 1.5–2× what four students finish (33 classes) | 16 classes, three scope tiers
+
+      
+ | M6 | minor | "Overflows in ~350 steps" was off by 5–11×; SGD noise radius O(α) should be O(√α); FD cost n+1 should be 2n | Corrected in place
+
+    
+
+  
+08Report map
+
+  
+Do this first. Get the instructor's example report and the conference abstract template from Canvas (email the professor if they are missing). The final part numbering and screenshot titles must follow the example; the numbering below is provisional.
+
+  
+
+    
+ | Part | Content | Wk 8 | Wk 15 | Source in this doc
+
+    
+
+ | Title page | Course, team, members, date, clickable repo link | ✓ | ✓ | —
+
+      
+ | 1. Introduction | Problem description | ✓ | ✓ | 01
+
+      
+ | 2. Classical algorithm | Description, convergence, complexity | ✓ | ✓ | 02
+
+      
+ | 3. Pseudocode | Canonical 14-line version + worked example | ✓ | ✓ | 02
+
+      
+ | 4. Algorithm implementation | GradientDescent.java with comments; screenshots |  | ✓ | 05
+
+      
+ | 5. Real-world situation | RetentionRadar scenario, objective, derivation, data | ✓ | ✓ | 04
+
+      
+ | 6. Main program | Driver code with comments; repo link again; screenshots |  | ✓ | 05
+
+      
+ | 7. Improved algorithm | Nesterov description, pseudocode, comparison table, caveats |  | ✓ | 03
+
+      
+ | 8. Screenshots | Titled "Part N.M. Screenshots: …" | (✓) | ✓ | —
+
+      
+ | 9. Effort analysis | Contribution of each member, backed by commit history |  | ✓ | 10
+
+      
+ | 10. Abstract | One page, conference template |  | ✓ | —
+
+      
+ | 11. References | Full citations | ✓ | ✓ | 12
+
+    
+
+  
+Screenshots to capture
+
+  
+
+    
+- Project structure in IntelliJ and the public GitHub repo page with several contributors (week 8 evidence).
+
+    
+- Cohort loaded: row count, base rate, L, μ, κ, safe step.
+
+    
+- Classical GD training: iterations, final loss, stop reason.
+
+    
+- Nesterov training on the same data; comparison table and ASCII contour.
+
+    
+- Call list with risk and reasons; the same list after changing c_u.
+
+    
+- Self-check output, all checks passing.
+
+  
+
+Abstract, one page
+
+  
+Title naming method and application (e.g. "Nesterov-Accelerated Gradient Descent for Early Identification of At-Risk University Students"), authors, then motivation, method, results with your own measured numbers, conclusion. Roughly 400–500 words. The template wins on format.
+
+  
+09Schedule
+
+  
+Week numbers assume the semester started 31 Aug. Check them against Canvas. Submit week 8 materials 24 h before the talk (aim for 36 h) and week 15 materials 48 h before (aim for 72 h).
+
+  
+
+    
+
+Week 4 · now
+
+Freeze and set up
+
+Agree the three decisions. Create the IntelliJ project and public repo; every member pushes a commit. Get the example report and abstract template.
+
+    
+
+Week 5
+
+Theory drafted
+
+Parts 1–3 as full prose. Two members derive the logistic gradient independently and compare.
+
+    
+
+Week 6
+
+Application and first code
+
+Part 5 drafted. CSV prepared and committed with attribution. GradientDescent.minimize runs on the test bowl.
+
+    
+
+Week 7
+
+Slides, risks, rehearsal
+
+Week 8 report assembled; slides built; two timed rehearsals with every member speaking.
+
+    
+
+Week 8
+
+Initial presentation
+
+Problem, classical algorithm, pseudocode, real-world situation, risks. 5–10 minutes.
+
+    
+
+Weeks 9–10 · Tier 1
+
+Assignment satisfied on its own
+
+Logistic objective, loader, gradient check, classical GD on real data, call list, driver with header.
+
+    
+
+Weeks 11–12 · Tier 2
+
+The improvement
+
+Nesterov, power iteration for L, comparison table, ASCII contour, full self-check.
+
+    
+
+Week 13 · Tier 3 if time
+
+Polish and capture
+
+Cost lever, honesty slide, all screenshots. Clone the repo into a fresh folder and run it.
+
+    
+
+Week 14
+
+Final report and abstract
+
+Effort analysis from git history, abstract, references, slides, rehearsal.
+
+    
+
+Week 15
+
+Final presentation
+
+About 10 minutes, live demo, each member presents their part.
+
+  
+
+  
+The scope tiers go into the README. When someone proposes "just one more feature", the README is what you point at.
+
+  
+10Who does what
+
+  
+
+The brief says every member contributes to all areas and may be questioned on any part. Two devices make that true: each member owns one vertical slice end to end (theory, code, report section, presentation), and ownership of the cross-cutting duties rotates each sprint.
+
+  
+
+    
+ | Member | Vertical slice | Code | Report | Presents
+
+    
+
+ | M1 | Classical gradient descent | GradientDescent, VectorMath | Parts 2–4 | Algorithm, pseudocode, complexity
+
+      
+ | M2 | Nesterov acceleration | NesterovGradientDescent, PowerIteration | Part 7 | Improvement, comparison, caveats
+
+      
+ | M3 | Model and data | LogisticObjective, loader, synthetic data | Part 5 | Application, gradient derivation
+
+      
+ | M4 | Program and verification | Driver, Watchlist, SelfCheck | Parts 6, 8 | Live demo, verification
+
+    
+
+  
+Rotating each sprint: repo gatekeeper (reviews and merges), report editor (formatting, links, captions), delivery lead (slides, timing, submission). Everyone reviews someone else's pull request every week. For three members, merge M3 and M4; for five, split verification out of M4. Commit history is the evidence for the effort analysis, so everyone commits their own work under their own name.
+
+  
+11Risks
+
+  
+The week 8 talk must present risks, so this is graded content.
+
+  
+
+    
+ | Risk | Likelihood | Impact | Mitigation
+
+    
+
+ | Step size too large: loss goes to Infinity or NaN during the demo | High | High | Compute α = 1/L by power iteration; magnitude guard returns DIVERGED
+
+      
+ | Raw features make the problem ill-conditioned, GD looks broken | Certain | High | Expected and used as the showcase; standardization shown on the honesty slide
+
+      
+ | Program runs only on its author's machine | Med-High | Critical | Relative paths, committed .iml, fresh-clone test in week 13
+
+      
+ | Decimal-comma locale breaks CSV parsing or output | Med-High | High | Locale.ROOT everywhere; test on a uk_UA machine
+
+      
+ | Improvement's assumptions do not hold for our objective | Low (checked) | High | Objective is smooth and convex; state conditions on the slide
+
+      
+ | Scope creep (GUI, neural network, second dataset) | Medium | High | Tiers frozen in the README
+
+      
+ | Dataset licence or availability | Low | Medium | CC BY 4.0, committed copy, synthetic fallback
+
+      
+ | Member unavailable (illness, workload) | Medium | Med-High | Vertical slices plus weekly cross-review, so someone else knows every part
+
+      
+ | Power outage or air-raid alert during work or presentation | Medium | Med-High | Submit early; offline demo via self-check; recorded Loom as backup
+
+      
+ | Cannot answer Q&A outside one's own part | Med-High | High | Rehearsals where members quiz each other on the others' parts
+
+      
+ | Academic integrity: AI-written comments or copied text | Medium | Catastrophic | Own-words comments; cite every source; each member can explain every line
+
+      
+ | Broken or private GitHub link in the report | Low-Med | Medium | Test the link from a logged-out browser before each submission
+
+    
+
+  
+12References
+
+  
+
+    
+- Cauchy, A.-L. (1847). Méthode générale pour la résolution des systèmes d'équations simultanées. Comptes Rendus de l'Académie des Sciences, 25, 536–538.
+
+    
+- Boyd, S., & Vandenberghe, L. (2004). Convex Optimization, Ch. 9. Cambridge University Press.
+
+    
+- Nocedal, J., & Wright, S. J. (2006). Numerical Optimization (2nd ed.), Ch. 3. Springer.
+
+    
+- Nesterov, Y. (1983). A method of solving a convex programming problem with convergence rate O(1/k²). Soviet Mathematics Doklady, 27(2), 372–376.
+
+    
+- Nesterov, Y. (2004). Introductory Lectures on Convex Optimization, Ch. 2. Springer.
+
+    
+- Polyak, B. T. (1964). Some methods of speeding up the convergence of iteration methods. USSR Comput. Math. and Math. Physics, 4(5), 1–17.
+
+    
+- Lessard, L., Recht, B., & Packard, A. (2016). Analysis and design of optimization algorithms via integral quadratic constraints. SIAM J. Optimization, 26(1), 57–95.
+
+    
+- Armijo, L. (1966). Minimization of functions having Lipschitz continuous first partial derivatives. Pacific J. Mathematics, 16(1), 1–3.
+
+    
+- Kingma, D. P., & Ba, J. (2015). Adam: A method for stochastic optimization. ICLR 2015. arXiv:1412.6980.
+
+    
+- Ruder, S. (2016). An overview of gradient descent optimization algorithms. arXiv:1609.04747.
+
+    
+- Bottou, L., Curtis, F. E., & Nocedal, J. (2018). Optimization methods for large-scale machine learning. SIAM Review, 60(2), 223–311.
+
+    
+- Hastie, T., Tibshirani, R., & Friedman, J. (2009). The Elements of Statistical Learning (2nd ed.), §4.4. Springer.
+
+    
+- Bishop, C. M. (2006). Pattern Recognition and Machine Learning, §4.3. Springer.
+
+    
+- Realinho, V., Machado, J., Baptista, L., & Martins, M. V. (2022). Predicting student dropout and academic success. Data, 7(11), 146. Dataset: UCI ML Repository #697, CC BY 4.0.
+
+    
+- Bloch, J. (2018). Effective Java (3rd ed.). Addison-Wesley.
+
+  
+
+Do not cite CLRS for gradient descent; it does not cover it. Cite it only for what it contains, such as asymptotic notation. Check every citation against the actual source before it goes into the report.
+
+  Measured figures come from benchmark runs made while designing this plan. Re-run them in your own code and report your own numbers.
+

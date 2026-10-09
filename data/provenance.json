@@ -1,0 +1,20 @@
+{
+  "original_data_sha256": "3ef126de5cefff26eb11fbb4237f1a1401cb64b488e2f1d598c23cedeb4c45ae",
+  "prepared_csv_sha256": "364de1e6e38a4ec7bdbece2f70109878a7769fd741d6b7db9a0cc43c7e228384",
+  "source_rows": 4424,
+  "targets": {
+    "Dropout": 1421,
+    "Enrolled": 794,
+    "Graduate": 2209
+  },
+  "selected_columns": [
+    "Admission grade",
+    "Age at enrollment",
+    "Tuition fees up to date",
+    "Scholarship holder",
+    "Curricular units 1st sem (enrolled)",
+    "Curricular units 1st sem (approved)",
+    "Curricular units 1st sem (grade)",
+    "Target"
+  ]
+}

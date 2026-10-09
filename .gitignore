@@ -1,0 +1,8 @@
+build/
+out/
+*.class
+.idea/workspace.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/httpRequests/
+.DS_Store
